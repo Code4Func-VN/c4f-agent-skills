@@ -1,0 +1,247 @@
+description: "git skill evaluation — 30 test cases"
+
+prompts:
+  - file://prompt.txt
+
+providers:
+  - id: openai:gpt-4o
+    config:
+      temperature: 0
+      max_tokens: 2048
+
+tests:
+  # ─── CONVENTIONAL COMMITS (6) ───
+
+  - description: "CC: correct format"
+    vars:
+      task: "Write a commit message for adding user authentication"
+    assert:
+      - type: javascript
+        value: "output.includes('feat(')||output.includes('feat:')"
+      - type: javascript
+        value: "(function(){var m=output.match(/^[a-z]+\\(?[a-z]*\\)?:/m);return m!==null})()"
+
+  - description: "CC: imperative mood"
+    vars:
+      task: "Write a commit message for fixing a login redirect bug"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return !l.match(/fix(ed|es|ing) /)||l.includes('fix(')||l.includes('fix:')})()"
+
+  - description: "CC: lowercase subject"
+    vars:
+      task: "Write a commit message for updating the README"
+    assert:
+      - type: javascript
+        value: "(function(){var m=output.match(/(?:feat|fix|docs|chore|refactor|ci|test|perf|style|build)(?:\\([^)]*\\))?:\\s*([a-z])/);return m!==null})()"
+
+  - description: "CC: breaking change"
+    vars:
+      task: "Write a commit message for removing the deprecated /api/v1/users endpoint. This is a breaking change for API consumers."
+    assert:
+      - type: javascript
+        value: "output.includes('BREAKING CHANGE')||output.includes('!')||output.toLowerCase().includes('breaking')"
+
+  - description: "CC: body explains why"
+    vars:
+      task: "Write a detailed commit message with body for changing the session timeout from 30 to 60 minutes"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('why')||l.includes('because')||l.includes('users')||l.includes('feedback')||l.includes('reason')||l.includes('improve')})()"
+
+  - description: "CC: type selection"
+    vars:
+      task: "What commit type should I use for: adding a feature, fixing a bug, updating deps, changing CI config?"
+    assert:
+      - type: icontains
+        value: "feat"
+      - type: icontains
+        value: "fix"
+      - type: javascript
+        value: "output.includes('chore')||output.includes('build')"
+      - type: icontains
+        value: "ci"
+
+  # ─── SECURITY (5) ───
+
+  - description: "Sec: detect API key"
+    vars:
+      task: "Review this staged file for secrets:\nconst API_KEY = 'sk-proj-abc123def456';\nconst DB_URL = 'postgres://user:pass@host/db';"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('secret')||l.includes('api_key')||l.includes('credential')||l.includes('password')||l.includes('sensitive')})()"
+
+  - description: "Sec: stop and remove"
+    vars:
+      task: "I accidentally staged a file with an API key. What should I do?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('reset')||l.includes('unstage')||l.includes('remove')})()"
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('rotate')||l.includes('revoke')||l.includes('new key')||l.includes('gitignore')})()"
+
+  - description: "Sec: never commit .env"
+    vars:
+      task: "Should I commit my .env file to git?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('no')||l.includes('never')||l.includes('not')})()"
+      - type: icontains
+        value: "gitignore"
+
+  - description: "Sec: signing commits"
+    vars:
+      task: "How do I sign my git commits?"
+    assert:
+      - type: javascript
+        value: "output.includes('gpg')||output.includes('GPG')||output.includes('ssh')||output.includes('SSH')||output.includes('gpgsign')"
+
+  - description: "Sec: pre-commit scan"
+    vars:
+      task: "How do I automatically scan for secrets before committing?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('pre-commit')||l.includes('hook')||l.includes('grep')||l.includes('gitleaks')||l.includes('detect-secrets')})()"
+
+  # ─── BRANCH STRATEGY (4) ───
+
+  - description: "Branch: naming convention"
+    vars:
+      task: "What should I name a branch for adding a payment feature?"
+    assert:
+      - type: javascript
+        value: "output.includes('feat/')||output.includes('feature/')"
+      - type: icontains
+        value: "payment"
+
+  - description: "Branch: never force push main"
+    vars:
+      task: "Can I force push to the main branch to fix the history?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('no')||l.includes('never')||l.includes('avoid')||l.includes('dangerous')})()"
+
+  - description: "Branch: delete after merge"
+    vars:
+      task: "What should I do with a feature branch after it's merged?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('delete')||l.includes('remove')||l.includes('clean')})()"
+
+  - description: "Branch: protection rules"
+    vars:
+      task: "How do I protect the main branch on GitHub?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('protection')||l.includes('required review')||l.includes('status check')||l.includes('branch rule')})()"
+
+  # ─── WORKFLOW (5) ───
+
+  - description: "WF: stage intentionally"
+    vars:
+      task: "What's the safest way to stage files for a commit?"
+    assert:
+      - type: javascript
+        value: "output.includes('add -p')||output.includes('add --patch')||output.includes('specific files')"
+
+  - description: "WF: split commits"
+    vars:
+      task: "I changed 15 files: 5 are a new feature, 5 are bug fixes, 5 are doc updates. How should I commit?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('split')||l.includes('separate')||l.includes('multiple commit')||l.includes('three commit')})()"
+
+  - description: "WF: squash merge features"
+    vars:
+      task: "What merge strategy should I use for a feature branch into main?"
+    assert:
+      - type: icontains
+        value: "squash"
+
+  - description: "WF: rebase to update branch"
+    vars:
+      task: "My feature branch is behind main. How do I update it?"
+    assert:
+      - type: javascript
+        value: "output.includes('rebase')||output.includes('git pull --rebase')"
+
+  - description: "WF: pre-PR checklist"
+    vars:
+      task: "What should I check before creating a pull request?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('test')&&(l.includes('lint')||l.includes('build')||l.includes('review'))})()"
+
+  # ─── PR (5) ───
+
+  - description: "PR: conventional title"
+    vars:
+      task: "Write a PR title for adding user profile settings"
+    assert:
+      - type: javascript
+        value: "(function(){var m=output.match(/feat\\(?[a-z-]*\\)?:/i);return m!==null})()"
+
+  - description: "PR: body template"
+    vars:
+      task: "Write a PR description for a feature that adds email notifications"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('summary')||l.includes('what'))&&(l.includes('test')||l.includes('how to verify'))})()"
+
+  - description: "PR: small focused PRs"
+    vars:
+      task: "My PR has 40 files across 3 unrelated features. Is this OK?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('split')||l.includes('separate')||l.includes('too large')||l.includes('too big')||l.includes('break')})()"
+
+  - description: "PR: gh cli create"
+    vars:
+      task: "Create a pull request using the GitHub CLI"
+    assert:
+      - type: javascript
+        value: "output.includes('gh pr create')"
+
+  - description: "PR: post-merge cleanup"
+    vars:
+      task: "What should I do after my PR is merged?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('delete')&&(l.includes('branch')||l.includes('pull')||l.includes('local'))})()"
+
+  # ─── ANTI-PATTERNS (5) ───
+
+  - description: "Anti: no git add ."
+    vars:
+      task: "Review: I always use 'git add .' before committing. Is this fine?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('git add -p')||l.includes('specific')||l.includes('intentional'))&&(l.includes('avoid')||l.includes('risk')||l.includes('instead')||l.includes('better'))})()"
+
+  - description: "Anti: no vague messages"
+    vars:
+      task: "Review this commit message: 'fix stuff'"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('conventional')||l.includes('descriptive')||l.includes('specific')||l.includes('what was fixed')})()"
+
+  - description: "Anti: no --no-verify"
+    vars:
+      task: "A pre-commit hook is failing. Can I use --no-verify to skip it?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('fix')||l.includes('resolve')||l.includes('avoid')||l.includes('not recommended')||l.includes('last resort')})()"
+
+  - description: "Anti: hooks with lefthook"
+    vars:
+      task: "What tool should I use for git hooks in a project?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('lefthook')||l.includes('husky')||l.includes('pre-commit')})()"
+
+  - description: "Anti: conflict resolution"
+    vars:
+      task: "I have merge conflicts after rebasing. What's the systematic approach to resolve them?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('conflict')&&(l.includes('resolve')||l.includes('ours')||l.includes('theirs')||l.includes('continue'))})()"

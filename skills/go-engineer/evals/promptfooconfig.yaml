@@ -1,0 +1,604 @@
+description: "go-engineer skill evaluation — 70 test cases across 10 categories"
+
+prompts:
+  - file://prompt.txt
+
+providers:
+  - id: openai:gpt-4o
+    config:
+      temperature: 0
+
+defaultTest:
+  options:
+    provider: openai:gpt-4o
+
+tests:
+  # ════════════════════════════════════════════════
+  # 1. ROUTING (10 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Route: new project → scaffold"
+    vars:
+      task: "I want to create a new Go backend project called orderservice"
+    assert:
+      - type: icontains
+        value: "init-project"
+      - type: javascript
+        value: "output.includes('internal/')||output.includes('cmd/')"
+
+  - description: "Route: new feature → 4 layers"
+    vars:
+      task: "Add a payment feature module to the project"
+    assert:
+      - type: icontains
+        value: "domain"
+      - type: icontains
+        value: "service"
+      - type: icontains
+        value: "handler"
+      - type: icontains
+        value: "repository"
+
+  - description: "Route: tests → table-driven"
+    vars:
+      task: "Write table-driven tests for the user registration service"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('table')||output.includes('tests :=')||output.includes('[]struct')||output.includes('tt.')})()"
+
+  - description: "Route: review → systematic"
+    vars:
+      task: "Review this Go codebase for quality issues"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('naming')||l.includes('error')||l.includes('checklist')||l.includes('review')})()"
+
+  - description: "Route: concurrency → goroutines"
+    vars:
+      task: "I need to run multiple API calls concurrently and collect results"
+    assert:
+      - type: icontains
+        value: "goroutine"
+
+  - description: "Route: performance → measure first"
+    vars:
+      task: "This endpoint is slow, how do I optimize it?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('benchmark')||l.includes('profile')||l.includes('pprof')||l.includes('measure')})()"
+
+  - description: "Route: logging → slog"
+    vars:
+      task: "How should I implement logging in my Go API?"
+    assert:
+      - type: icontains
+        value: "slog"
+
+  - description: "Route: generics → when to use"
+    vars:
+      task: "Should I use generics for this Go function that works with both int and float slices?"
+    assert:
+      - type: icontains
+        value: "generic"
+
+  - description: "Route: documentation → doc comments"
+    vars:
+      task: "How should I document my exported Go functions?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('doc comment')||l.includes('godoc')||(l.includes('//')&&l.includes('comment'))})()"
+
+  - description: "Route: linting → golangci-lint"
+    vars:
+      task: "Set up linting for my Go project"
+    assert:
+      - type: javascript
+        value: "output.includes('golangci-lint')||output.includes('golangci.yml')"
+
+  # ════════════════════════════════════════════════
+  # 2. IDIOMS — naming, style, declarations (8 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Idiom: MixedCaps constant"
+    vars:
+      task: "Write a Go constant for maximum retry count"
+    assert:
+      - type: not-contains
+        value: "MAX_RETRY"
+      - type: javascript
+        value: "output.includes('MaxRetry')||output.includes('maxRetry')||output.includes('MaxRetries')||output.includes('maxRetries')"
+
+  - description: "Idiom: no this/self receiver"
+    vars:
+      task: "Write methods for a UserService struct in Go"
+    assert:
+      - type: not-contains
+        value: "(this "
+      - type: not-contains
+        value: "(self "
+
+  - description: "Idiom: enum starts at 1"
+    vars:
+      task: "Write a Go enum using iota for order status: pending, processing, completed, cancelled. Remember: start at 1 so zero value means unset."
+    assert:
+      - type: contains
+        value: "iota"
+      - type: javascript
+        value: "output.includes('iota + 1')||output.includes('iota+1')||output.includes('_ =')||output.includes('_=')||output.includes('1')"
+
+  - description: "Idiom: early return / guard clause"
+    vars:
+      task: "Write a Go function that validates a user: check email not empty, name not empty, age > 0, then process"
+    assert:
+      - type: javascript
+        value: "(function(){var lines=output.split('\\n');var returnCount=lines.filter(function(l){return l.trim().startsWith('return')}).length;return returnCount>=3})()"
+
+  - description: "Idiom: var for zero value, := for explicit"
+    vars:
+      task: "Write Go variable declarations: a zero-value string, a counter starting at 10, an error to return"
+    assert:
+      - type: javascript
+        value: "output.includes('var ')&&output.includes(':=')"
+
+  - description: "Idiom: package name lowercase singular"
+    vars:
+      task: "I'm creating a package for authentication utilities. What should I name it?"
+    assert:
+      - type: javascript
+        value: "output.includes('auth')||output.includes('authn')"
+      - type: not-contains
+        value: "authUtils"
+      - type: not-contains
+        value: "auth_utils"
+
+  - description: "Idiom: initialisms consistent case"
+    vars:
+      task: "Write a Go struct for an HTTP API client with URL and ID fields"
+    assert:
+      - type: javascript
+        value: "(output.includes('URL')||output.includes('url'))&&(output.includes('ID')||output.includes('id'))"
+      - type: not-contains
+        value: "Url "
+      - type: not-contains
+        value: "Id "
+
+  - description: "Idiom: no util/helper package"
+    vars:
+      task: "Where should I put shared helper functions in my Go project?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('avoid')||l.includes(\"don't\")||l.includes('specific')||l.includes('descriptive')})()"
+
+  # ════════════════════════════════════════════════
+  # 3. ERROR HANDLING (7 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Err: wrap with fmt.Errorf %w"
+    vars:
+      task: "Write a Go function that reads a file and returns its contents"
+    assert:
+      - type: contains
+        value: "fmt.Errorf"
+      - type: contains
+        value: "%w"
+
+  - description: "Err: lowercase error strings"
+    vars:
+      task: "Define sentinel errors for a payment feature: not found, insufficient funds, expired card"
+    assert:
+      - type: javascript
+        value: "(function(){var m=output.match(/errors\\.New\\(\"([A-Z])/g);return m===null||m.length===0})()"
+
+  - description: "Err: handle once — return OR log"
+    vars:
+      task: "Review this Go code:\n```go\nfunc (s *Service) Process(ctx context.Context) error {\n    result, err := s.repo.Find(ctx)\n    if err != nil {\n        log.Printf(\"error: %v\", err)\n        return fmt.Errorf(\"process: %w\", err)\n    }\n    return nil\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('log')&&l.includes('return'))&&(l.includes('once')||l.includes('either')||l.includes('not both')||l.includes('choose'))})()"
+
+  - description: "Err: errors.Is not string compare"
+    vars:
+      task: "Write Go code to check if an error is 'not found'"
+    assert:
+      - type: contains
+        value: "errors.Is"
+      - type: not-contains
+        value: '.Error() == "'
+
+  - description: "Err: return error interface not concrete"
+    vars:
+      task: "Write a custom error type in Go for validation errors with field name and message"
+    assert:
+      - type: javascript
+        value: "output.includes('error')&&output.includes('Error()')&&output.includes('string')"
+
+  - description: "Err: guard clause pattern"
+    vars:
+      task: "Review this Go code:\n```go\nfunc process(data []byte) error {\n    result, err := parse(data)\n    if err == nil {\n        transformed := transform(result)\n        if transformed != nil {\n            return save(transformed)\n        } else {\n            return errors.New(\"transform failed\")\n        }\n    } else {\n        return err\n    }\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('early return')||l.includes('guard')||l.includes('nesting')||l.includes('indent')})()"
+
+  - description: "Err: sentinel errors with errors.New"
+    vars:
+      task: "Define domain errors for a user feature: not found, already exists, invalid email"
+    assert:
+      - type: contains
+        value: "errors.New"
+      - type: javascript
+        value: "output.includes('Err')"
+
+  # ════════════════════════════════════════════════
+  # 4. INTERFACES & FUNCTIONS (6 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Iface: consumer-defined interface"
+    vars:
+      task: "Write a Go handler that needs a user service dependency"
+    assert:
+      - type: javascript
+        value: "output.includes('interface')&&(output.includes('type service interface')||output.includes('type userService interface')||output.includes('type Service interface')||output.includes('type UserService interface'))"
+
+  - description: "Iface: accept interface return concrete"
+    vars:
+      task: "Write a Go constructor for a cache that can use Redis or memory backend"
+    assert:
+      - type: javascript
+        value: "output.includes('interface')&&(output.includes('func New')||output.includes('func new'))"
+
+  - description: "Iface: compile-time check"
+    vars:
+      task: "Write a Go struct that implements io.Writer. Include a compile-time interface compliance check using var _ pattern."
+    assert:
+      - type: javascript
+        value: "output.includes('var _')"
+
+  - description: "Func: functional options"
+    vars:
+      task: "Write a Go constructor for a Server that accepts optional host, port, timeout, and TLS config"
+    assert:
+      - type: javascript
+        value: "output.includes('Option')||output.includes('With')"
+
+  - description: "Func: receiver 1-2 letter"
+    vars:
+      task: "Write a method on PaymentService that processes a payment"
+    assert:
+      - type: not-contains
+        value: "(this "
+      - type: not-contains
+        value: "(self "
+      - type: not-contains
+        value: "(ps PaymentService)"
+
+  - description: "Func: pointer receiver for mutable"
+    vars:
+      task: "Write a Go struct Counter with Increment and Value methods"
+    assert:
+      - type: javascript
+        value: "output.includes('*Counter')"
+
+  # ════════════════════════════════════════════════
+  # 5. CONCURRENCY & CONTEXT (6 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Conc: errgroup for parallel"
+    vars:
+      task: "Fetch data from 3 APIs concurrently and return all results"
+    assert:
+      - type: javascript
+        value: "output.includes('errgroup')||output.includes('WaitGroup')||output.includes('sync.')"
+
+  - description: "Conc: context as first param"
+    vars:
+      task: "Write a Go function signature for a database query"
+    assert:
+      - type: javascript
+        value: "output.includes('ctx context.Context')||output.includes('ctx context.')"
+
+  - description: "Conc: defer cancel on WithTimeout"
+    vars:
+      task: "Write Go code that makes an HTTP request with a 5-second timeout using context"
+    assert:
+      - type: contains
+        value: "defer cancel"
+
+  - description: "Conc: channel direction"
+    vars:
+      task: "Write a Go function that reads from a channel and processes each item"
+    assert:
+      - type: javascript
+        value: "output.includes('<-chan')||output.includes('chan<-')||output.includes('<-ch')||output.includes('<-c ')"
+
+  - description: "Conc: don't store context in struct"
+    vars:
+      task: "Review this Go code:\n```go\ntype Server struct {\n    ctx context.Context\n    db  *sql.DB\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('context')&&(l.includes('struct')||l.includes('store')||l.includes('parameter'))})()"
+
+  - description: "Conc: mutex for shared state"
+    vars:
+      task: "Write a thread-safe Go counter"
+    assert:
+      - type: javascript
+        value: "output.includes('sync.Mutex')||output.includes('sync.RWMutex')||output.includes('atomic')"
+
+  # ════════════════════════════════════════════════
+  # 6. DATA STRUCTURES & GENERICS (5 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "DS: nil slice preferred"
+    vars:
+      task: "What's the difference between var s []int and s := []int{} in Go?"
+    assert:
+      - type: icontains
+        value: "nil"
+
+  - description: "DS: map for sets"
+    vars:
+      task: "Implement a set of strings in Go"
+    assert:
+      - type: javascript
+        value: "output.includes('map[string]bool')||output.includes('map[string]struct{}')"
+
+  - description: "DS: append assign result"
+    vars:
+      task: "Show the correct way to append to a slice in Go. Show the actual append call, not a wrapper function."
+    assert:
+      - type: javascript
+        value: "output.includes('= append(')"
+
+  - description: "Gen: start concrete"
+    vars:
+      task: "Should I write a generic function or a concrete one for sorting user names?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('concrete')||l.includes('specific')||l.includes('start with')||l.includes('premature')})()"
+
+  - description: "Gen: constraint with ~"
+    vars:
+      task: "Write a Go generic function that sums any numeric slice"
+    assert:
+      - type: javascript
+        value: "output.includes('constraints')||output.includes('Ordered')||output.includes('Number')||output.includes('~int')||output.includes('~float')"
+
+  # ════════════════════════════════════════════════
+  # 7. TESTING (5 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Test: cmp.Diff for structs"
+    vars:
+      task: "Write a Go test comparing two User structs. Use cmp.Diff from google/go-cmp for the comparison, not reflect.DeepEqual."
+    assert:
+      - type: javascript
+        value: "output.includes('cmp.Diff')||output.includes('go-cmp')"
+
+  - description: "Test: t.Helper in helpers"
+    vars:
+      task: "Write a Go test helper function that creates a test database"
+    assert:
+      - type: contains
+        value: "t.Helper()"
+
+  - description: "Test: t.Error default, t.Fatal for setup"
+    vars:
+      task: "When should I use t.Fatal vs t.Error in Go tests?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('fatal')&&l.includes('error')&&(l.includes('setup')||l.includes('continue')||l.includes('meaningful'))})()"
+
+  - description: "Test: subtests with t.Run"
+    vars:
+      task: "Write Go subtests for testing different user validation scenarios"
+    assert:
+      - type: contains
+        value: "t.Run"
+
+  - description: "Test: error semantics not string"
+    vars:
+      task: "Write a Go test that checks for a specific error type"
+    assert:
+      - type: javascript
+        value: "output.includes('errors.Is')||output.includes('errors.As')"
+
+  # ════════════════════════════════════════════════
+  # 8. LOGGING & DEFENSIVE (5 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Log: structured slog"
+    vars:
+      task: "Log a user registration event in Go"
+    assert:
+      - type: javascript
+        value: "output.includes('slog.')&&(output.includes('slog.Info')||output.includes('slog.Error'))"
+
+  - description: "Log: static message + kv pairs"
+    vars:
+      task: "Write structured logging for an HTTP request in Go"
+    assert:
+      - type: javascript
+        value: "(function(){return output.includes('\"method\"')||output.includes('\"path\"')||output.includes('\"status\"')||output.includes('\"duration\"')})()"
+
+  - description: "Def: defer cleanup"
+    vars:
+      task: "Write a Go function that opens a file, reads it, and returns contents"
+    assert:
+      - type: contains
+        value: "defer"
+
+  - description: "Def: crypto/rand not math/rand"
+    vars:
+      task: "Generate a random token for API authentication in Go"
+    assert:
+      - type: javascript
+        value: "output.includes('crypto/rand')||output.includes('crypto')"
+      - type: not-contains
+        value: "math/rand"
+
+  - description: "Def: copy slice at boundary"
+    vars:
+      task: "Write a Go method that returns a struct's internal slice safely"
+    assert:
+      - type: javascript
+        value: "output.includes('copy(')||output.includes('append([]')||output.includes('make([]')"
+
+  # ════════════════════════════════════════════════
+  # 9. ARCHITECTURE (8 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Arch: feature-first structure"
+    vars:
+      task: "What directory structure should I use for a Go API with users and orders?"
+    assert:
+      - type: javascript
+        value: "(function(){return (output.includes('user/')||output.includes('/user'))&&(output.includes('order/')||output.includes('/order'))})()"
+      - type: not-contains
+        value: "internal/handlers"
+      - type: not-contains
+        value: "internal/models"
+
+  - description: "Arch: sub-folders by layer"
+    vars:
+      task: "Show me the file structure for a user feature module"
+    assert:
+      - type: icontains
+        value: "domain"
+      - type: icontains
+        value: "handler"
+      - type: icontains
+        value: "repository"
+
+  - description: "Arch: business filenames"
+    vars:
+      task: "What files do I need for user registration and user lookup endpoints?"
+    assert:
+      - type: javascript
+        value: "output.includes('register')&&(output.includes('find')||output.includes('get')||output.includes('lookup'))"
+      - type: not-contains
+        value: "handler_register"
+
+  - description: "Arch: main.go = app.Run()"
+    vars:
+      task: "Write the main.go for a Go API project"
+    assert:
+      - type: contains
+        value: "app.Run()"
+
+  - description: "Arch: domain entity pure — no framework"
+    vars:
+      task: "Write a domain entity for a Product with price validation"
+    assert:
+      - type: not-contains
+        value: "gorm"
+      - type: not-contains
+        value: "echo"
+      - type: javascript
+        value: "output.includes('func New')||output.includes('func (p *Product')"
+
+  - description: "Arch: service orchestrates business rules"
+    vars:
+      task: "Write a service method that creates an order: validate items, check stock, calculate total, save"
+    assert:
+      - type: javascript
+        value: "output.includes('func (s *')&&output.includes('error')"
+      - type: not-contains
+        value: "http."
+      - type: not-contains
+        value: "echo."
+
+  - description: "Arch: handler maps HTTP only"
+    vars:
+      task: "Write an Echo handler for creating an order"
+    assert:
+      - type: javascript
+        value: "output.includes('echo.Context')&&output.includes('svc')||output.includes('service')"
+      - type: not-contains
+        value: "gorm."
+      - type: not-contains
+        value: "r.db"
+
+  - description: "Arch: repository with model mapping"
+    vars:
+      task: "Write a GORM repository Create method for an Order entity"
+    assert:
+      - type: javascript
+        value: "output.includes('toModel')||output.includes('orderModel')||/type [a-z]\\w+Model/.test(output)"
+      - type: contains
+        value: "fmt.Errorf"
+
+  # ════════════════════════════════════════════════
+  # 10. SECURITY & ANTI-PATTERNS (10 tests)
+  # ════════════════════════════════════════════════
+
+  - description: "Sec: .env management"
+    vars:
+      task: "How should I manage secrets in a Go project?"
+    assert:
+      - type: icontains
+        value: ".env"
+      - type: icontains
+        value: "gitignore"
+
+  - description: "Sec: config validation"
+    vars:
+      task: "Write config loading for a Go API that connects to PostgreSQL"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('valid')||l.includes('required')||l.includes('missing')})()"
+
+  - description: "Sec: SSL in production"
+    vars:
+      task: "What database connection settings should I use for production Go API?"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('ssl')||l.includes('tls')||l.includes('sslmode')})()"
+
+  - description: "Anti: catches util package"
+    vars:
+      task: "Review this Go project structure:\ninternal/\n  util/\n    helpers.go\n  models/\n    user.go\n  handlers/\n    user_handler.go"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('util')||l.includes('helper'))&&(l.includes('avoid')||l.includes(\"don't\")||l.includes('should not')||l.includes('rename')||l.includes('instead')||l.includes('anti'))})()"
+
+  - description: "Anti: catches GORM on domain"
+    vars:
+      task: "Review this Go code:\n```go\n// internal/user/domain/user.go\npackage domain\n\ntype User struct {\n    ID    string `gorm:\"primaryKey\"`\n    Email string `gorm:\"uniqueIndex\"`\n    Name  string\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('gorm')&&(l.includes('domain')||l.includes('separate')||l.includes('repository')||l.includes('model'))})()"
+
+  - description: "Anti: catches bare return err"
+    vars:
+      task: "Review this Go repository method:\n```go\nfunc (r *Repo) Create(ctx context.Context, u *domain.User) error {\n    _, err := r.db.ExecContext(ctx, \"INSERT INTO users ...\", u.ID, u.Email)\n    return err\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('wrap')||l.includes('fmt.errorf')||l.includes('context')})()"
+
+  - description: "Anti: catches business logic in handler"
+    vars:
+      task: "Review this Go handler:\n```go\nfunc (h *Handler) register(c echo.Context) error {\n    var req registerRequest\n    c.Bind(&req)\n    existing, _ := h.db.Where(\"email = ?\", req.Email).First(&User{}).Error\n    if existing == nil { return echo.NewHTTPError(409, \"taken\") }\n    hashed, _ := bcrypt.GenerateFromPassword([]byte(req.Password), 10)\n    h.db.Create(&User{Email: req.Email, Password: string(hashed)})\n    return c.JSON(201, \"ok\")\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('service')||l.includes('business logic')||l.includes('layer'))&&(l.includes('handler')||l.includes('move')||l.includes('separate'))})()"
+
+  - description: "Anti: catches log and return"
+    vars:
+      task: "Review this Go code:\n```go\nif err != nil {\n    log.Printf(\"failed: %v\", err)\n    return fmt.Errorf(\"operation: %w\", err)\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return (l.includes('log')&&l.includes('return'))&&(l.includes('once')||l.includes('either')||l.includes('not both')||l.includes('choose')||l.includes('one'))})()"
+
+  - description: "Anti: catches ignored error"
+    vars:
+      task: "Review this Go code:\n```go\nresult, _ := db.Exec(\"DELETE FROM users WHERE id = ?\", id)\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('ignor')||l.includes('discard')||l.includes('handle')||l.includes('check')})()"
+
+  - description: "Anti: catches context.Background in handler"
+    vars:
+      task: "Review this Go handler:\n```go\nfunc (h *Handler) get(c echo.Context) error {\n    user, err := h.svc.GetByID(context.Background(), c.Param(\"id\"))\n    return c.JSON(200, user)\n}\n```"
+    assert:
+      - type: javascript
+        value: "(function(){var l=output.toLowerCase();return l.includes('context')&&(l.includes('request')||l.includes('r.context')||l.includes('c.request'))})()"
