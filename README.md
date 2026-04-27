@@ -1,18 +1,18 @@
 # c4f-agent-skills
 
-A collection of Claude Code skills for software engineering workflows. Each skill lives in `skills/<name>/SKILL.md` and is loaded by Claude Code when the trigger conditions are met.
+Bộ sưu tập Claude Code skills cho quy trình phát triển phần mềm. Mỗi skill nằm trong `skills/<name>/SKILL.md` và được Claude Code tải lên khi điều kiện kích hoạt phù hợp.
 
-## How skills work
+## Skill hoạt động như thế nào
 
-A skill is a markdown file with a YAML frontmatter block that tells Claude Code:
-- **name** — the skill identifier
-- **description** — when to activate it (Claude reads this to decide relevance)
-- **allowed-tools** — which tools the skill is permitted to use
-- **disable-model-invocation** — if `true`, the skill body is injected as a system prompt without consuming an LLM call
+Một skill là file markdown có phần YAML frontmatter khai báo với Claude Code:
+- **name** — tên định danh của skill
+- **description** — điều kiện kích hoạt (Claude đọc trường này để quyết định có dùng skill không)
+- **allowed-tools** — danh sách tool mà skill được phép gọi
+- **disable-model-invocation** — nếu `true`, nội dung skill được inject thẳng vào system prompt mà không tốn thêm LLM call
 
-The body of the skill is instruction text that Claude follows when active. Skills can reference companion files in `references/`, `scripts/`, or `assets/` subdirectories.
+Phần thân của skill là nội dung hướng dẫn mà Claude tuân theo khi skill đang active. Skill có thể tham chiếu các file đi kèm trong thư mục con `references/`, `scripts/`, hoặc `assets/`.
 
-To install a skill, copy its folder into `.claude/skills/<name>/` in your project (or `~/.claude/skills/<name>/` for global use), then reference it in your `claude.json`:
+**Cài đặt skill:** Copy thư mục skill vào `.claude/skills/<name>/` trong project (hoặc `~/.claude/skills/<name>/` để dùng toàn cục), rồi khai báo trong `claude.json`:
 
 ```json
 {
@@ -22,126 +22,126 @@ To install a skill, copy its folder into `.claude/skills/<name>/` in your projec
 
 ---
 
-## Skills reference
+## Danh sách skills
 
-### Git & version control
+### Git & quản lý version
 
 #### `git`
-**When to use:** Any time code is written, modified, or deleted.
+**Dùng khi:** Có bất kỳ thay đổi code nào — viết mới, sửa, hoặc xóa.
 
-Auto-commits changes using conventional commits (`feat:`, `fix:`, `refactor:`…), runs a security scan before committing, and can open pull requests. Also invocable as `/git pr` or `/git scan`.
+Tự động commit theo conventional commits (`feat:`, `fix:`, `refactor:`…), chạy security scan trước khi commit, và có thể mở pull request. Cũng có thể gọi trực tiếp bằng `/git pr` hoặc `/git scan`.
 
-References: branch strategy, commit conventions, conflict resolution, PR workflow, security scanning.
+References: chiến lược branch, quy ước commit, giải quyết conflict, quy trình PR, security scanning.
 
 ---
 
 #### `git-guardrails-claude-code`
-**When to use:** When you want to prevent Claude from accidentally running destructive git commands.
+**Dùng khi:** Muốn ngăn Claude vô tình chạy các lệnh git nguy hiểm.
 
-Sets up a `PreToolUse` hook that intercepts and blocks: `git push`, `git reset --hard`, `git clean -f/fd`, `git branch -D`, `git checkout .`, `git restore .`. Supports project-scoped or global installation.
+Cài đặt hook `PreToolUse` để chặn các lệnh: `git push`, `git reset --hard`, `git clean -f/fd`, `git branch -D`, `git checkout .`, `git restore .`. Hỗ trợ cài theo project hoặc toàn cục.
 
-Includes: `scripts/block-dangerous-git.sh` — the hook script that gets installed.
+Kèm theo: `scripts/block-dangerous-git.sh` — script hook được cài vào hệ thống.
 
 ---
 
 ### Go backend
 
 #### `go-engineer`
-**When to use:** Writing, reviewing, testing, or scaffolding Go code.
+**Dùng khi:** Viết, review, test, hoặc scaffold code Go.
 
-Enforces idiomatic Go style (clarity → simplicity → concision), error handling conventions (`fmt.Errorf("save user: %w", err)`), clean architecture with Echo + GORM + Docker, and test-first discipline. Blocks `feat`/`fix` commits without tests.
+Áp dụng Go idiomatic style (clarity → simplicity → concision), quy ước xử lý lỗi (`fmt.Errorf("save user: %w", err)`), clean architecture với Echo + GORM + Docker, và kỷ luật viết test trước code. Chặn commit `feat`/`fix` nếu không có test.
 
-References: API design, blueprint structure/config, concurrency, database patterns, error handling, testing layers, linting, logging, performance, code review checklist.
+References: API design, cấu trúc project, concurrency, database patterns, error handling, testing theo layer, linting, logging, performance, checklist code review.
 
-Scripts: project scaffolding, lint setup, naming/error/interface checks, benchmark comparison, pre-review automation.
+Scripts: scaffold project, cài lint, kiểm tra naming/error/interface, so sánh benchmark, pre-review tự động.
 
 ---
 
 ### Ant Design / React UI
 
 #### `ant-design`
-**When to use:** Making decisions about antd 6.x, Ant Design Pro, or Ant Design X — component selection, theming, SSR, a11y, performance, CRUD patterns, AI/chat UI.
+**Dùng khi:** Ra quyết định về antd 6.x, Ant Design Pro, hoặc Ant Design X — chọn component, theming, SSR, a11y, performance, CRUD, AI/chat UI.
 
-Decision guide (not a tutorial). Follows the SPOT framework: Scope → Process → Output. Mandates querying `@ant-design/cli` before writing any component code. Enforces: one root `ConfigProvider`, tokens-first theming, no `.ant-*` selector coupling.
+Guide ra quyết định (không phải tutorial). Theo framework SPOT: Scope → Process → Output. Bắt buộc query `@ant-design/cli` trước khi viết bất kỳ component nào. Quy tắc cứng: một `ConfigProvider` duy nhất ở root, theming ưu tiên token, không dùng selector `.ant-*`.
 
-References: `antd-cli.md` — offline CLI workflow for API lookup, demos, migration, linting, bug reporting.
+References: `antd-cli.md` — quy trình CLI offline để tra API, demo, migration, lint, báo bug.
 
 ---
 
 #### `antd`
-**When to use:** Writing antd components, debugging antd issues, querying APIs/props/tokens/demos, migrating between versions, or analyzing antd usage.
+**Dùng khi:** Viết antd component, debug lỗi antd, tra API/props/token/demo, migrate giữa các version, hoặc phân tích antd usage trong project.
 
-CLI-focused skill. Requires `@ant-design/cli` (`which antd || npm install -g @ant-design/cli`). Covers 10 scenarios: writing components, full docs, debugging, migration, project analysis, changelogs, component discovery, bug reporting, CLI bug reporting, MCP server mode. Always uses `--format json`.
+Skill tập trung vào CLI. Yêu cầu `@ant-design/cli` (`which antd || npm install -g @ant-design/cli`). Bao phủ 10 tình huống: viết component, xem docs đầy đủ, debug, migration, phân tích project, changelog, khám phá component, báo bug component, báo bug CLI, chạy MCP server. Luôn dùng `--format json`.
 
 ---
 
-### Architecture & design
+### Kiến trúc & thiết kế
 
 #### `improve-codebase-architecture`
-**When to use:** Improving architecture, finding refactoring opportunities, making a codebase more testable or AI-navigable.
+**Dùng khi:** Muốn cải thiện kiến trúc, tìm cơ hội refactor, làm codebase dễ test hơn hoặc dễ navigate hơn cho AI.
 
-Surfaces **deepening opportunities** — refactors that turn shallow modules (large interface, thin implementation) into deep ones (small interface, large implementation). Uses Ousterhout's vocabulary: module, interface, depth, seam, adapter, leverage, locality. Three-phase process: Explore → Present candidates → Grilling loop. Reads `CONTEXT.md` and `docs/adr/` for domain language.
+Tìm **deepening opportunities** — các refactor biến module nông (interface phức tạp, implementation mỏng) thành module sâu (interface nhỏ, implementation dày). Dùng vocabulary của Ousterhout: module, interface, depth, seam, adapter, leverage, locality. Ba bước: Explore → Đề xuất candidates → Grilling loop. Đọc `CONTEXT.md` và `docs/adr/` để lấy ngôn ngữ domain.
 
-Companion files:
-- `DEEPENING.md` — how to classify dependencies and test across seams
-- `INTERFACE-DESIGN.md` — parallel sub-agent pattern for exploring alternative interfaces
-- `LANGUAGE.md` — shared vocabulary (must use these terms exactly)
+File đi kèm:
+- `DEEPENING.md` — cách phân loại dependency và test qua seam
+- `INTERFACE-DESIGN.md` — pattern dùng parallel sub-agent để khám phá interface thay thế
+- `LANGUAGE.md` — vocabulary dùng chung (phải dùng chính xác các thuật ngữ này)
 
-Pairs with: `domain-model`, `design-an-interface`.
+Kết hợp tốt với: `domain-model`, `design-an-interface`.
 
 ---
 
 #### `design-an-interface`
-**When to use:** Designing an API, exploring interface options, comparing module shapes, or when someone says "design it twice".
+**Dùng khi:** Thiết kế API, khám phá các phương án interface, so sánh hình dạng module, hoặc khi muốn "design it twice".
 
-Spawns 3+ sub-agents in parallel, each with a different design constraint (minimize methods / maximize flexibility / optimize for common case). Presents designs sequentially, then compares by depth, locality, and ease of correct use. Based on Ousterhout's "Design It Twice" principle.
+Spawn 3+ sub-agent song song, mỗi agent nhận một ràng buộc thiết kế khác nhau (tối giản số method / tối đa linh hoạt / tối ưu cho case phổ biến nhất). Trình bày từng thiết kế, rồi so sánh theo depth, locality, và khả năng dùng đúng. Dựa trên nguyên tắc "Design It Twice" của Ousterhout.
 
 ---
 
 #### `domain-model`
-**When to use:** Stress-testing a plan against the project's domain language, sharpening terminology, managing `CONTEXT.md` and ADRs.
+**Dùng khi:** Stress-test plan trước ngôn ngữ domain của project, làm rõ thuật ngữ, quản lý `CONTEXT.md` và ADR.
 
-Conducts a relentless grilling session: challenges vague terms, cross-references code against stated behavior, updates `CONTEXT.md` inline as terms are resolved, and offers ADRs only when a decision is hard to reverse, surprising without context, and the result of a real trade-off.
+Thực hiện phiên grilling không nhượng bộ: thách thức các thuật ngữ mơ hồ, đối chiếu code với hành vi đã nêu, cập nhật `CONTEXT.md` ngay khi thuật ngữ được chốt, chỉ đề xuất ADR khi quyết định khó đảo ngược, gây ngạc nhiên nếu không có context, và là kết quả của trade-off thực sự.
 
-Companion files:
-- `CONTEXT-FORMAT.md` — format and rules for `CONTEXT.md` (single vs multi-context repos)
-- `ADR-FORMAT.md` — minimal ADR format with criteria for when to write one
+File đi kèm:
+- `CONTEXT-FORMAT.md` — định dạng và quy tắc viết `CONTEXT.md` (single vs multi-context repo)
+- `ADR-FORMAT.md` — định dạng ADR tối giản với tiêu chí khi nào nên viết
 
 ---
 
-### Development process
+### Quy trình phát triển
 
 #### `tdd`
-**When to use:** Building features or fixing bugs using TDD, red-green-refactor, or test-first development.
+**Dùng khi:** Xây dựng tính năng hoặc fix bug theo TDD, red-green-refactor, hoặc test-first.
 
-Enforces vertical slices (one test → one implementation → repeat), not horizontal slices (all tests first, then all code). Tests must verify behavior through public interfaces only — no mocking internal collaborators, no testing private methods. Refactor only after GREEN.
+Áp dụng vertical slices (một test → một implementation → lặp lại), không phải horizontal slices (viết hết test rồi mới viết hết code). Test chỉ được verify behavior qua public interface — không mock internal collaborator, không test private method. Chỉ refactor sau khi đã GREEN.
 
 Reference files:
-- `deep-modules.md` — small interface + lots of implementation (Ousterhout)
-- `interface-design.md` — accept dependencies, return results, small surface area
-- `mocking.md` — mock only at system boundaries; prefer SDK-style interfaces
-- `refactoring.md` — duplication, shallow modules, feature envy, primitive obsession
-- `tests.md` — good vs bad test examples with red flags
+- `deep-modules.md` — interface nhỏ + implementation lớn (Ousterhout)
+- `interface-design.md` — nhận dependency vào, trả về kết quả, surface nhỏ
+- `mocking.md` — chỉ mock ở system boundary; ưu tiên SDK-style interface
+- `refactoring.md` — duplication, shallow module, feature envy, primitive obsession
+- `tests.md` — ví dụ test tốt vs test xấu với các red flag
 
 ---
 
 #### `grill-me`
-**When to use:** Stress-testing a plan, getting challenged on a design decision, or whenever you say "grill me".
+**Dùng khi:** Muốn stress-test một plan, bị thách thức về quyết định thiết kế, hoặc khi gõ "grill me".
 
-Interviews you relentlessly about every aspect of a plan — one question at a time, walking down each branch of the decision tree. Provides a recommended answer for each question. Explores the codebase to answer questions it can resolve itself.
+Phỏng vấn bạn không ngừng về mọi khía cạnh của plan — một câu hỏi mỗi lần, đi theo từng nhánh của cây quyết định. Đưa ra câu trả lời được đề xuất cho mỗi câu hỏi. Tự khám phá codebase để trả lời những câu hỏi có thể tìm thấy trong code.
 
 ---
 
 #### `zoom-out`
-**When to use:** Unfamiliar with a section of code and need to understand how it fits into the bigger picture.
+**Dùng khi:** Không quen với một phần code và cần hiểu nó fit vào bức tranh lớn như thế nào.
 
-One-liner skill: instructs the agent to go up a layer of abstraction and produce a map of all relevant modules and callers. Zero LLM overhead (`disable-model-invocation: true`).
+Skill một dòng: yêu cầu agent lên một tầng abstraction và tạo ra bản đồ tất cả các module và caller liên quan. Không tốn LLM call (`disable-model-invocation: true`).
 
 ---
 
-## Adding a new skill
+## Thêm skill mới
 
-1. Create `skills/<name>/SKILL.md` with the frontmatter schema above.
-2. Add reference files under `skills/<name>/references/` or `skills/<name>/scripts/` as needed.
-3. Keep the `description` field precise — Claude uses it to decide when to activate the skill.
-4. Test with a real task before committing.
+1. Tạo `skills/<name>/SKILL.md` với frontmatter schema ở trên.
+2. Thêm reference files vào `skills/<name>/references/` hoặc `skills/<name>/scripts/` nếu cần.
+3. Viết trường `description` thật chính xác — Claude dùng nó để quyết định khi nào kích hoạt skill.
+4. Test với một task thực tế trước khi commit.
