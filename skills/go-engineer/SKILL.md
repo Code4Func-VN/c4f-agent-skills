@@ -3,7 +3,7 @@ name: go-engineer
 description: Go backend engineering. Use when writing, reviewing, testing, or scaffolding Go code. Covers style, errors, concurrency, testing, project architecture (Echo + GORM + Docker).
 license: Apache-2.0
 metadata:
-  stack: "Echo v4, GORM, PostgreSQL, Docker"
+  stack: "Echo v4, GORM, PostgreSQL, Redis, Docker"
 allowed-tools: Bash(bash:*)
 ---
 
